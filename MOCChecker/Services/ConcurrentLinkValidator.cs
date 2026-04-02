@@ -1,30 +1,107 @@
 ﻿using MOCChecker.Interfaces;
+using MOCChecker.Models;
 
 namespace MOCChecker.Services
 {
     public class ConcurrentLinkValidator : ILinkValidator, IDisposable
     {
-        // Понадобится HttpClient для проверки внешних ссылок.
-        // Важно: HttpClient должен быть один на всё приложение (Singleton), 
-        // чтобы не исчерпать сокеты ОС.
+        private readonly HttpClient _httpClient;
+        private readonly SemaphoreSlim _semaphore;
 
-        public Task ValidateLinkAsync(IEnumerable<DocumentLink> links, string rootDirectory)
+        public ConcurrentLinkValidator(int maxConcurrentRequests = 10)
         {
-            // Твоя задача здесь:
-            // 1. Разделить логику проверки:
-            //    - Если ссылка Internal: проверить наличие файла на диске (File.Exists).
-            //    - Если ссылка External: сделать асинхронный HTTP HEAD или GET запрос.
-            // 2. Так как внешних ссылок может быть много, запросы нужно делать параллельно
-            //    с помощью Task.WhenAll().
-            // 3. ОБЯЗАТЕЛЬНО: Ограничить количество одновременных HTTP-запросов 
-            //    (например, не больше 10 потоков за раз), чтобы не получить бан от серверов. 
-            //    Здесь идеально подойдет SemaphoreSlim.
-            throw new NotImplementedException();
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(5)
+            };
+            _semaphore= new SemaphoreSlim(maxConcurrentRequests);
+        }
+
+        public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, string rootDirectory)
+        {
+            var tasks = new List<Task>();
+
+            foreach (var link in links)
+            {
+                if (link.Type.Equals(LinkType.Internal))
+                {
+                    tasks.Add(ValidateInternalAsync(link, rootDirectory));
+                }
+                else
+                {
+                    tasks.Add(ValidateExternalAsync(link));
+                }
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        private Task ValidateInternalAsync(DocumentLink link, string rootDirectory)
+        {
+            if (string.IsNullOrEmpty(rootDirectory))
+            {
+                throw new ArgumentException(rootDirectory);
+            }
+            if (link == null)
+            {
+                throw new ArgumentException("link is null");
+            }
+
+            var fullPath = Path.Combine(rootDirectory,link.TargetPath+".md");
+
+            if (!File.Exists(fullPath))
+            {
+                link.Status = LinkStatus.Broken;
+            }
+            else
+            {
+                link.Status = LinkStatus.Valid;
+            }
+            return Task.CompletedTask;
+        }
+
+        private async Task ValidateExternalAsync(DocumentLink link)
+        {
+            if (link == null)
+            {
+                throw new ArgumentException("link is null");
+            }
+
+            await _semaphore.WaitAsync();
+
+            try
+            {
+                var message = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri(link.TargetPath),
+                    Method = HttpMethod.Head
+                };
+                await _httpClient.SendAsync(message);
+                var response = await _httpClient.SendAsync(message);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    link.Status = LinkStatus.Valid;
+                }
+                else
+                {
+                    link.Status = LinkStatus.Broken;
+                }
+            }
+            catch(Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException)
+            {
+                link.Status= LinkStatus.Timeout;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public void Dispose()
         {
-            // Здесь нужно правильно освободить неуправляемые ресурсы (например, HttpClient)
+            _httpClient.Dispose();
+            _semaphore.Dispose();
         }
     }
 }
