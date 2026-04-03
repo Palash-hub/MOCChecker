@@ -14,6 +14,8 @@ namespace MOCChecker.Services
             {
                 Timeout = TimeSpan.FromSeconds(5)
             };
+
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _semaphore= new SemaphoreSlim(maxConcurrentRequests);
         }
 
@@ -47,7 +49,11 @@ namespace MOCChecker.Services
                 throw new ArgumentException("link is null");
             }
 
-            var fullPath = Path.Combine(rootDirectory,link.TargetPath+".md");
+            var filePath = Path.HasExtension(link.TargetPath) 
+                ? link.TargetPath 
+                : link.TargetPath+".md";
+
+            var fullPath = Path.Combine(rootDirectory, filePath);
 
             if (!File.Exists(fullPath))
             {
@@ -76,7 +82,7 @@ namespace MOCChecker.Services
                     RequestUri = new Uri(link.TargetPath),
                     Method = HttpMethod.Head
                 };
-                await _httpClient.SendAsync(message);
+
                 var response = await _httpClient.SendAsync(message);
 
                 if (response.IsSuccessStatusCode)

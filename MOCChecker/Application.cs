@@ -15,21 +15,32 @@ namespace MOCChecker
             ILinkValidator validator,
             IReportGenerator reporter)
         {
-            _scanner = scanner;
-            _extractor = extractor;
-            _validator = validator;
-            _reporter = reporter;
+            _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner)); ;
+            _extractor = extractor ?? throw new ArgumentNullException(nameof(extractor)); ;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator)); ;
+            _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter)); ;
         }
 
         public async Task RunAsync(string targetDirectory)
         {
-            // Логика работы:
-            // 1. Вызываем _scanner, получаем пути ко всем файлам.
-            // 2. В цикле (или параллельно) скармливаем пути в _extractor, собирая все MarkdownDocument.
-            // 3. Собираем все извлеченные DocumentLink в единую плоскую коллекцию (LINQ SelectMany).
-            // 4. Отправляем эту коллекцию в _validator для массовой проверки.
-            // 5. Передаем обновленные документы в _reporter для вывода результатов.
-            throw new NotImplementedException();
+            Console.WriteLine($"Начинаем сканирование директории: {targetDirectory}");
+
+            var filePaths = _scanner.GetMarkdownFiles(targetDirectory);
+            var documents = new List<MarkdownDocument>();
+            var allLinks = new List<DocumentLink>();
+
+            foreach (var path in filePaths)
+            {
+                var links = await _extractor.ExtractLinksAsync(path);
+                documents.Add(new MarkdownDocument(path) { Links = links });
+                allLinks.AddRange(links);
+            }
+
+            Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
+
+            await _validator.ValidateLinkAsync(allLinks, targetDirectory);
+            
+            _reporter.GenerateReport(documents);
         } 
     }
 }

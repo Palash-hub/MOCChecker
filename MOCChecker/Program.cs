@@ -1,10 +1,19 @@
-﻿namespace MOCChecker
+﻿using MOCChecker.Services;
+
+namespace MOCChecker
 {
     public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            var validator = new ConcurrentLinkValidator();
+            var extractor = new RegexLinkExtractor();
+            var reporter = new ConsoleReportGenerator();
+            var scanner = new LocalFileScanner();
+
+            var app = new Application(scanner,extractor,validator,reporter);
+
+            await app.RunAsync("D:\\ForVaults\\ForWork3thLVL");
         }
     }
 }
