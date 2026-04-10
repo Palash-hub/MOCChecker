@@ -25,11 +25,11 @@ namespace MOCChecker
         {
             Console.WriteLine($"Начинаем сканирование директории: {targetDirectory}");
 
-            var filePaths = _scanner.GetMarkdownFiles(targetDirectory);
+            var filePaths = _scanner.GetAllFiles(targetDirectory);
             var documents = new List<MarkdownDocument>();
             var allLinks = new List<DocumentLink>();
 
-            foreach (var path in filePaths)
+            foreach (var path in filePaths.Where(file => file.EndsWith(".md")))
             {
                 var links = await _extractor.ExtractLinksAsync(path);
                 documents.Add(new MarkdownDocument(path) { Links = links });
@@ -37,8 +37,15 @@ namespace MOCChecker
             }
 
             Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
+            var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            await _validator.ValidateLinkAsync(allLinks, targetDirectory);
+            foreach (var file in filePaths.Where(file => file.EndsWith(".md")|| file.EndsWith(".png")))
+            {
+                var fileName = Path.GetFileName(file);
+                fileIndex.TryAdd(fileName, file);
+            }
+
+            await _validator.ValidateLinkAsync(allLinks, fileIndex);
             
             _reporter.GenerateReport(documents);
         } 

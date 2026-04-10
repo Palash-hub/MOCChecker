@@ -4,7 +4,7 @@ namespace MOCChecker.Services
 {
     public class LocalFileScanner : IFileScanner
     {
-        public IEnumerable<string> GetMarkdownFiles(string directoryPath)
+        public IEnumerable<string> GetAllFiles(string directoryPath)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
             {
@@ -16,7 +16,7 @@ namespace MOCChecker.Services
                 throw new DirectoryNotFoundException($"Directory is't found: {directoryPath}");
             }
 
-            return Directory.EnumerateFiles(directoryPath, "*.md", searchOption: SearchOption.AllDirectories);
+            return Directory.EnumerateFiles(directoryPath, "*.*", searchOption: SearchOption.AllDirectories);
         }
     }
 }

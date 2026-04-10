@@ -8,30 +8,26 @@ namespace MOCChecker.Services
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _semaphore;
 
-        public ConcurrentLinkValidator(int maxConcurrentRequests = 10)
+        public ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests = 10)
         {
-            _httpClient = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(5)
-            };
-
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _semaphore= new SemaphoreSlim(maxConcurrentRequests);
         }
 
-        public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, string rootDirectory)
+        public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, Dictionary<string, string> fileIndex)
         {
-            var allFiles = Directory.GetFiles(rootDirectory, "*.*", SearchOption.AllDirectories);
-            var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            //var allFiles = Directory.GetFiles(rootDirectory, "*.*", SearchOption.AllDirectories);
+            //var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var file in allFiles)
-            {
-                var fileName = Path.GetFileName(file);
-                if (fileName.EndsWith(".md") || fileName.EndsWith(".png"))
-                {
-                    fileIndex.TryAdd(fileName, file);
-                }
-            }
+            //foreach (var file in allFiles)
+            //{
+            //    var fileName = Path.GetFileName(file);
+            //    if (fileName.EndsWith(".md") || fileName.EndsWith(".png"))
+            //    {
+            //        fileIndex.TryAdd(fileName, file);
+            //    }
+            //}
 
             var tasks = new List<Task>();
 

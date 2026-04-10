@@ -2,6 +2,6 @@
 {
     public interface IFileScanner
     {
-        IEnumerable<string> GetMarkdownFiles(string directoryPath);
+        IEnumerable<string> GetAllFiles(string directoryPath);
     }
 }
