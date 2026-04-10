@@ -21,13 +21,25 @@ namespace MOCChecker.Services
 
         public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, string rootDirectory)
         {
+            var allFiles = Directory.GetFiles(rootDirectory, "*.*", SearchOption.AllDirectories);
+            var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in allFiles)
+            {
+                var fileName = Path.GetFileName(file);
+                if (fileName.EndsWith(".md") || fileName.EndsWith(".png"))
+                {
+                    fileIndex.TryAdd(fileName, file);
+                }
+            }
+
             var tasks = new List<Task>();
 
             foreach (var link in links)
             {
-                if (link.Type.Equals(LinkType.Internal))
+                if (link.Type == LinkType.Internal)
                 {
-                    tasks.Add(ValidateInternalAsync(link, rootDirectory));
+                    tasks.Add(ValidateInternalAsync(link, fileIndex));
                 }
                 else
                 {
@@ -38,31 +50,28 @@ namespace MOCChecker.Services
             await Task.WhenAll(tasks);
         }
 
-        private Task ValidateInternalAsync(DocumentLink link, string rootDirectory)
+        private Task ValidateInternalAsync(DocumentLink link, Dictionary<string, string> fileIndex)
         {
-            if (string.IsNullOrEmpty(rootDirectory))
-            {
-                throw new ArgumentException(rootDirectory);
-            }
             if (link == null)
             {
                 throw new ArgumentException("link is null");
             }
 
-            var filePath = Path.HasExtension(link.TargetPath) 
+            var cleanTarget = Path.GetFileName(link.TargetPath);
+
+            var fileName = Path.HasExtension(cleanTarget) 
                 ? link.TargetPath 
-                : link.TargetPath+".md";
+                : link.TargetPath + ".md";
 
-            var fullPath = Path.Combine(rootDirectory, filePath);
-
-            if (!File.Exists(fullPath))
-            {
-                link.Status = LinkStatus.Broken;
-            }
-            else
+            if (fileIndex.ContainsKey(fileName))
             {
                 link.Status = LinkStatus.Valid;
             }
+            else
+            {
+                link.Status = LinkStatus.Broken;
+            }
+
             return Task.CompletedTask;
         }
 
