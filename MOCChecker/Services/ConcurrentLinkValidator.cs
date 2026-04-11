@@ -8,7 +8,7 @@ namespace MOCChecker.Services
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _semaphore;
 
-        public ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests = 10)
+        public ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");

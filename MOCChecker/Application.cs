@@ -39,7 +39,7 @@ namespace MOCChecker
             Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
             var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var file in filePaths.Where(file => file.EndsWith(".md")|| file.EndsWith(".png")))
+            foreach (var file in filePaths.Where(file => file.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
             {
                 var fileName = Path.GetFileName(file);
                 fileIndex.TryAdd(fileName, file);
