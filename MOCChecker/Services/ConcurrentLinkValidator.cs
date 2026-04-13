@@ -3,16 +3,10 @@ using MOCChecker.Models;
 
 namespace MOCChecker.Services
 {
-    public class ConcurrentLinkValidator : ILinkValidator, IDisposable
+    public class ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests) : ILinkValidator, IDisposable
     {
-        private readonly HttpClient _httpClient;
-        private readonly SemaphoreSlim _semaphore;
-
-        public ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests)
-        {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _semaphore= new SemaphoreSlim(maxConcurrentRequests);
-        }
+        private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        private readonly SemaphoreSlim _semaphore = new(maxConcurrentRequests);
 
         public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, IEnumerable<string> fileIndex)
         {
@@ -33,7 +27,7 @@ namespace MOCChecker.Services
             await Task.WhenAll(tasks);
         }
 
-        private Task ValidateInternalAsync(DocumentLink link, IEnumerable<string> fileIndex)
+        private static Task ValidateInternalAsync(DocumentLink link, IEnumerable<string> fileIndex)
         {
             if (link == null)
             {

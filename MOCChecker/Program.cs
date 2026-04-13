@@ -1,5 +1,4 @@
 ﻿using MOCChecker.CLI;
-using MOCChecker.Services;
 using Spectre.Console.Cli;
 
 namespace MOCChecker

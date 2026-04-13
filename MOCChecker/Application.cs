@@ -2,7 +2,7 @@
 
 namespace MOCChecker
 {
-    internal class Application
+    public class Application
     {
         private readonly IFileScanner _scanner;
         private readonly ILinkExtractor _extractor;
@@ -40,9 +40,9 @@ namespace MOCChecker
 
             if (ignoreImages)
             {
-                allLinks = allLinks.Where(link => 
+                allLinks = [.. allLinks.Where(link => 
                     !imageExtensions.Any(ext => link.TargetPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
-                ).ToList();
+                )];
             }
 
             Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
