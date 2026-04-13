@@ -11,24 +11,11 @@ namespace MOCChecker.Services
         public ConcurrentLinkValidator(HttpClient httpClient, int maxConcurrentRequests)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _semaphore= new SemaphoreSlim(maxConcurrentRequests);
         }
 
-        public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, Dictionary<string, string> fileIndex)
+        public async Task ValidateLinkAsync(IEnumerable<DocumentLink> links, IEnumerable<string> fileIndex)
         {
-            //var allFiles = Directory.GetFiles(rootDirectory, "*.*", SearchOption.AllDirectories);
-            //var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            //foreach (var file in allFiles)
-            //{
-            //    var fileName = Path.GetFileName(file);
-            //    if (fileName.EndsWith(".md") || fileName.EndsWith(".png"))
-            //    {
-            //        fileIndex.TryAdd(fileName, file);
-            //    }
-            //}
-
             var tasks = new List<Task>();
 
             foreach (var link in links)
@@ -46,7 +33,7 @@ namespace MOCChecker.Services
             await Task.WhenAll(tasks);
         }
 
-        private Task ValidateInternalAsync(DocumentLink link, Dictionary<string, string> fileIndex)
+        private Task ValidateInternalAsync(DocumentLink link, IEnumerable<string> fileIndex)
         {
             if (link == null)
             {
@@ -59,7 +46,7 @@ namespace MOCChecker.Services
                 ? link.TargetPath 
                 : link.TargetPath + ".md";
 
-            if (fileIndex.ContainsKey(fileName))
+            if (fileIndex.Contains(fileName))
             {
                 link.Status = LinkStatus.Valid;
             }

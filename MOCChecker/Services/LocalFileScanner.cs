@@ -16,7 +16,36 @@ namespace MOCChecker.Services
                 throw new DirectoryNotFoundException($"Directory is't found: {directoryPath}");
             }
 
-            return Directory.EnumerateFiles(directoryPath, "*.*", searchOption: SearchOption.AllDirectories);
+            var files = new List<string>();
+            var directoriesToProcess = new Queue<string>();
+            directoriesToProcess.Enqueue(directoryPath);
+
+            while (directoriesToProcess.Count > 0)
+            {
+                var currentDir = directoriesToProcess.Dequeue();
+                var dirName = Path.GetFileName(currentDir);
+
+                if (dirName[0] == '.')
+                {
+                    continue;
+                }
+
+                try
+                {
+                    files.AddRange(Directory.GetFiles(currentDir));
+
+                    foreach(var subDir in Directory.GetDirectories(currentDir))
+                    {
+                        directoriesToProcess.Enqueue(subDir);
+                    }
+                }
+                catch(UnauthorizedAccessException)
+                {
+                    // Нет доступа к папке
+                }
+            }
+
+            return files;
         }
     }
 }

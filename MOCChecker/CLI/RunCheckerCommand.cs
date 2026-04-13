@@ -34,7 +34,7 @@ namespace MOCChecker.CLI
 
             try
             {
-                await app.RunAsync(settings.TargetDirectory);
+                await app.RunAsync(settings.TargetDirectory, settings.ImageIgnore);
                 AnsiConsole.MarkupLine("[bold green]Проверка успешно завершена![/]");
                 return 0; 
             }

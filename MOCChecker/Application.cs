@@ -21,7 +21,7 @@ namespace MOCChecker
             _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter)); ;
         }
 
-        public async Task RunAsync(string targetDirectory)
+        public async Task RunAsync(string targetDirectory, bool ignoreImages)
         {
             Console.WriteLine($"Начинаем сканирование директории: {targetDirectory}");
 
@@ -36,16 +36,18 @@ namespace MOCChecker
                 allLinks.AddRange(links);
             }
 
-            Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
-            var fileIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var imageExtensions = new[] { ".png", ".jpg", ".jpeg", ".git", ".webp", ".svg" };
 
-            foreach (var file in filePaths.Where(file => file.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
+            if (ignoreImages)
             {
-                var fileName = Path.GetFileName(file);
-                fileIndex.TryAdd(fileName, file);
+                allLinks = allLinks.Where(link => 
+                    !imageExtensions.Any(ext => link.TargetPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
             }
 
-            await _validator.ValidateLinkAsync(allLinks, fileIndex);
+            Console.WriteLine($"Извлечено {allLinks.Count} ссылок. Начинаем валидацию...");
+
+            await _validator.ValidateLinkAsync(allLinks, filePaths.Select(f => Path.GetFileName(f)));
             
             _reporter.GenerateReport(documents);
         } 
