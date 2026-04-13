@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "MOCChecker": {
-      "commandName": "Project",
-      "commandLineArgs": "-p \"D:\\ForVaults\\ForWork3thLVL\" -i"
-    }
-  }
-}
